@@ -1,5 +1,6 @@
 #cython: boundscheck=False
 #cython: wraparound=False
+#cython: nonecheck=False
 cimport cython
 from libc.math cimport ceil
 
