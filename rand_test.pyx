@@ -16,52 +16,52 @@ cdef extern from "UniformRandomGenerator.hpp":
 
 
 cdef extern from "rand_sse.h":
-    void srand_sse(unsigned int seed) nogil
-    void rand_sse(unsigned int*) nogil
-    void rand_sse_array(int count, unsigned int*) nogil
-    void rand_array(int count, unsigned int*) nogil
+    void c_srand_sse "srand_sse" (unsigned int seed) nogil
+    void c_rand_sse "rand_sse" (unsigned int*) nogil
+    void c_rand_sse_array "rand_sse_array" (int count, unsigned int*) nogil
+    void c_rand_array "rand_array" (int count, unsigned int*) nogil
 
 
 def py_srand_sse(unsigned int seed):
-    srand_sse(seed)
+    c_srand_sse(seed)
 
 
-cdef inline void _rand_sse_4(unsigned int *output) nogil:
+cdef inline void cy_rand_sse_4(unsigned int *output) nogil:
     '''
     Write 4 random unsigned integers to the output array.
     '''
-    rand_sse(output)
+    c_rand_sse(output)
 
 
-cdef inline void _rand_sse(int count, unsigned int *out) nogil:
+cdef inline void cy_rand_sse(int count, unsigned int *out) nogil:
     cdef int set_count = <int>ceil(count / 4.)
     cdef int start_index
     cdef int i
 
     for i in xrange(set_count):
         start_index = i * 4
-        _rand_sse_4(&out[start_index])
+        cy_rand_sse_4(&out[start_index])
 
 
-cdef inline void _rand_sse_cilk(int count, unsigned int *out) nogil:
+cdef inline void cy_rand_sse_cilk(int count, unsigned int *out) nogil:
     cdef int set_count = <int>ceil(count / 4.)
-    rand_sse_array(count, out)
+    c_rand_sse_array(count, out)
 
 
-cdef inline void _rand(int count, unsigned int *out) nogil:
-    rand_array(count, out)
+cdef inline void cy_rand_array(int count, unsigned int *out) nogil:
+    c_rand_array(count, out)
 
 
 def py_rand_sse(unsigned int [:] out):
-    _rand_sse(out.shape[0], &out[0])
+    cy_rand_sse(out.shape[0], &out[0])
 
 
 def py_rand_sse_cilk(unsigned int [:] out):
-    _rand_sse_cilk(out.shape[0], &out[0])
+    cy_rand_sse_cilk(out.shape[0], &out[0])
 
 
 def py_rand(unsigned int [:] out):
-    _rand(out.shape[0], &out[0])
+    cy_rand_array(out.shape[0], &out[0])
 
 
 #cpdef int py_fastrand():
