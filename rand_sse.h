@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <cilk/cilk.h>
 
-#define COMPATABILITY
 
 //define this if you wish to return values similar to the standard rand();
 void srand_sse( unsigned int seed );
@@ -106,7 +105,12 @@ inline void rand_sse_array(int count, unsigned int *out) {
 inline void rand_sse_array_cilk(int count, unsigned int *out) {
     int set_count = ceil(count / 4.);
     int start_index;
+#ifdef __cplusplus
     cilk_for(int i = 0; i < set_count; i++) {
+#else
+    int i;
+    cilk_for(i = 0; i < set_count; i++) {
+#endif
         start_index = i * 4;
         rand_sse(&out[start_index]);
     }
