@@ -1,3 +1,5 @@
+test.c # Cython generated
+
 # Compiled Object files
 *.slo
 *.lo
