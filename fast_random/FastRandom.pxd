@@ -25,7 +25,6 @@ cdef extern from "lib/FastRandom.hpp":
 
 cdef extern from "lib/FastRandom.hpp":
     cdef FastRandom * FastRandom__create_aligned "FastRandom::create_aligned" (uint32_t seed)
-    cdef void FastRandom__dealloc "FastRandom::dealloc" (FastRandom *obj)
 
 
 cdef inline void cy_rand_array(int count, uint32_t *out) nogil:

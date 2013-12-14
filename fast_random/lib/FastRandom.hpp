@@ -1,9 +1,6 @@
 #include <stdexcept>
-#include <iostream>
+#include "AlignedNew.hpp"
 #include "rand_sse.h"
-
-using std::cout;
-using std::endl;
 
 
 class FastRandom {
@@ -24,26 +21,18 @@ public:
     __declspec(align(16)) __m128i cur_seed_;
 
     static FastRandom *create_aligned(uint32_t seed=1) {
-        char *buffer = (char *)_mm_malloc(sizeof(FastRandom), 16);
-        if (buffer == NULL) {
-            throw std::runtime_error("Could not allocate memory for object.");
-        }
-        FastRandom *fast_random = new (buffer) FastRandom(seed);
-        return fast_random;
-    }
-
-    static void dealloc(FastRandom *object) {
-        _mm_free(object);
+        //char *buffer = (char *)_mm_malloc(sizeof(FastRandom), 16);
+        //if (buffer == NULL) {
+            //throw std::runtime_error("Could not allocate memory for object.");
+        //}
+        //FastRandom *fast_random = new (buffer) FastRandom(seed);
+        return new (16) FastRandom(seed);
     }
 
     FastRandom() {
-        cout << "[address of `cur_seed_`] = " << (size_t)&(this->cur_seed_)
-             << " (" << ((size_t)&(this->cur_seed_) % 16) << ")" << endl;
         this->seed(1);
     }
     FastRandom(uint32_t seed) {
-        cout << "[address of `cur_seed_`] = " << (size_t)&(this->cur_seed_)
-             << " (" << ((size_t)&(this->cur_seed_) % 16) << ")" << endl;
         this->seed(seed);
 #if 0
         uint32_t temp[4];
@@ -100,4 +89,6 @@ public:
          * __NB__ The length of the `out` array must be divisible by 4! */
         rand_sse_array_cilk(this->cur_seed_, count, out);
     }
+
+    DYNAMIC_ALIGNMENT(FastRandom);
 };

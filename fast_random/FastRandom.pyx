@@ -31,7 +31,7 @@ cdef class cFastRandom:
         self.thisptr = FastRandom__create_aligned(seed)
 
     def __dealloc__(self):
-        FastRandom__dealloc(self.thisptr)
+        del self.thisptr
 
     def seed(self, uint32_t seed):
         self.thisptr.seed(seed)
