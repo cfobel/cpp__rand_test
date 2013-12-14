@@ -1,8 +1,11 @@
 #include <sys/time.h> // for gettimeofday()
 #include <stdio.h>
+#include <iostream>
 #include <cstdlib>
-#include "rand_sse.h"
+#include "FastRandom.hpp"
 #include "UniformRandomGenerator.hpp"
+
+using namespace std;
 
 
 int main(int argc, char* argv[argc]) {
@@ -11,6 +14,23 @@ int main(int argc, char* argv[argc]) {
     }
     const int N = atoi(argv[1]);
     unsigned int *results = (unsigned int*)calloc(N, sizeof(unsigned int));
+
+    FastRandom *rng = FastRandom::create_aligned(10);
+    cout << "  " << (((size_t)&rng->cur_seed_) % 16) << endl;
+
+    float frand_values[4];
+
+    rng->frand4(frand_values);
+
+    cout << "frand_values = [";
+    cout << frand_values[:] << ", ";
+    cout << "]" << endl;
+
+    rng->rand4(results);
+    rng->rand_array(N, results);
+    rng->cilk_rand_array(N, results);
+    _mm_free(rng);
+#if 0
     timeval begin;
     timeval end;
 
@@ -67,5 +87,6 @@ int main(int argc, char* argv[argc]) {
     printf("sse speedup over uniform: %.2fx\n", (uniform_rand_time_spent /
                                                  sse_rand_time_spent));
 
+#endif
     return 0;
 }

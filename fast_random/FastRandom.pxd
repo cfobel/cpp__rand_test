@@ -1,3 +1,4 @@
+from libc.stdint cimport uint32_t
 from libc.math cimport ceil
 
 cdef extern from "lib/UniformRandomGenerator.hpp":
@@ -7,34 +8,25 @@ cdef extern from "lib/UniformRandomGenerator.hpp":
         float frand() nogil
 
 
-cdef extern from "lib/rand_sse.h":
-    void c_srand_sse "srand_sse" (unsigned int seed) nogil
-    void c_rand_sse "rand_sse" (unsigned int*) nogil
-    void c_rand_sse_array "rand_sse_array" (int count, unsigned int*) nogil
+cdef extern from "lib/FastRandom.hpp":
+    cdef cppclass FastRandom:
+        uint32_t *cur_seed_
+
+        FastRandom() except +
+        FastRandom(uint32_t seed) except +
+        void seed(uint32_t seed) nogil
+        void frand4(float *out) nogil
+        void rand4(uint32_t *out) nogil
+        void rand_array(int count, uint32_t *out) nogil
+        void frand_array(int count, float *out) nogil
+        void cilk_rand_array(int count, uint32_t *out) nogil
+
     void c_rand_array "rand_array" (int count, unsigned int*) nogil
 
-
-cdef inline void cy_rand_sse_4(unsigned int *output) nogil:
-    '''
-    Write 4 random unsigned integers to the output array.
-    '''
-    c_rand_sse(output)
+cdef extern from "lib/FastRandom.hpp":
+    cdef FastRandom * FastRandom__create_aligned "FastRandom::create_aligned" (uint32_t seed)
+    cdef void FastRandom__dealloc "FastRandom::dealloc" (FastRandom *obj)
 
 
-cdef inline void cy_rand_sse(int count, unsigned int *out) nogil:
-    cdef int set_count = <int>ceil(count / 4.)
-    cdef int start_index
-    cdef int i
-
-    for i in xrange(set_count):
-        start_index = i * 4
-        cy_rand_sse_4(&out[start_index])
-
-
-cdef inline void cy_rand_sse_cilk(int count, unsigned int *out) nogil:
-    cdef int set_count = <int>ceil(count / 4.)
-    c_rand_sse_array(count, out)
-
-
-cdef inline void cy_rand_array(int count, unsigned int *out) nogil:
+cdef inline void cy_rand_array(int count, uint32_t *out) nogil:
     c_rand_array(count, out)

@@ -5,18 +5,6 @@
 cimport cython
 
 
-def srand_sse(unsigned int seed):
-    c_srand_sse(seed)
-
-
-def rand_sse(unsigned int [:] out):
-    cy_rand_sse(out.shape[0], &out[0])
-
-
-def rand_sse_cilk(unsigned int [:] out):
-    cy_rand_sse_cilk(out.shape[0], &out[0])
-
-
 def rand(unsigned int [:] out):
     cy_rand_array(out.shape[0], &out[0])
 
@@ -29,3 +17,36 @@ def uniform_rand(unsigned int [:] out):
             out[i] = my_rng.irand(1 << 30)
     finally:
         del my_rng
+
+
+cdef class cFastRandom:
+    '''
+    cFastRandom()
+    '''
+    cdef FastRandom *thisptr
+
+    def __cinit__(self, seed=None):
+        if seed is None:
+            seed = 1
+        self.thisptr = FastRandom__create_aligned(seed)
+
+    def __dealloc__(self):
+        FastRandom__dealloc(self.thisptr)
+
+    def seed(self, uint32_t seed):
+        self.thisptr.seed(seed)
+
+    def frand4(self, float [:] out):
+        self.thisptr.frand4(&out[0])
+
+    def rand4(self, uint32_t [:] out):
+        self.thisptr.rand4(&out[0])
+
+    def frand_array(self, float [:] out):
+        self.thisptr.frand_array(len(out), &out[0])
+
+    def rand_array(self, uint32_t [:] out):
+        self.thisptr.rand_array(len(out), &out[0])
+
+    def cilk_rand_array(self, uint32_t [:] out):
+        self.thisptr.cilk_rand_array(len(out), &out[0])

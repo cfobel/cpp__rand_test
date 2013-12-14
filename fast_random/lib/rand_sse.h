@@ -32,37 +32,43 @@
 #include "emmintrin.h"
 #include <math.h>
 #include <stdlib.h>
+#include <cstdint>
 #include <cilk/cilk.h>
 
 
 //define this if you wish to return values similar to the standard rand();
-void srand_sse( unsigned int seed );
+void srand_sse(__m128i &cur_seed, uint32_t seed);
 
-void rand_sse( unsigned int* );
+void rand_sse(__m128i &cur_seed, uint32_t* );
 
-__declspec( align(16) ) static __m128i cur_seed;
-
-void srand_sse(unsigned int seed) {
-    cur_seed = _mm_set_epi32( seed, seed+1, seed, seed+1 );
+void srand_sse(__m128i &cur_seed, uint32_t seed) {
+    cur_seed = _mm_set_epi32(seed, seed + 1, seed, seed + 1);
 }
 
-inline void rand_sse( unsigned int* result ) {
+inline void frand_sse(__m128i &cur_seed, float* result) {
+    const float max_value = 4294967295.;
+    uint32_t rand_uints[4];
+    rand_sse(cur_seed, rand_uints);
+    result[0:4] = float(rand_uints[:]) / max_value;
+}
+
+inline void rand_sse(__m128i &cur_seed, uint32_t* result) {
     __declspec( align(16) ) __m128i cur_seed_split;
     __declspec( align(16) ) __m128i multiplier;
     __declspec( align(16) ) __m128i adder;
     __declspec( align(16) ) __m128i mod_mask;
     __declspec( align(16) ) __m128i sra_mask;
     __declspec( align(16) ) __m128i sseresult;
-    __declspec( align(16) ) static const unsigned int mult[4] =
+    __declspec( align(16) ) static const uint32_t mult[4] =
     { 214013, 17405, 214013, 69069 };
 
-    __declspec( align(16) ) static const unsigned int gadd[4] =
+    __declspec( align(16) ) static const uint32_t gadd[4] =
     { 2531011, 10395331, 13737667, 1 };
 
-    __declspec( align(16) ) static const unsigned int mask[4] =
+    __declspec( align(16) ) static const uint32_t mask[4] =
     { 0xFFFFFFFF, 0, 0xFFFFFFFF, 0 };
 
-    __declspec( align(16) ) static const unsigned int masklo[4] =
+    __declspec( align(16) ) static const uint32_t masklo[4] =
     { 0x00007FFF, 0x00007FFF, 0x00007FFF, 0x00007FFF };
 
     adder = _mm_load_si128( (__m128i*) gadd);
@@ -91,18 +97,29 @@ inline void rand_sse( unsigned int* result ) {
 }
 
 
-inline void rand_sse_array(int count, unsigned int *out) {
+inline void frand_sse_array(__m128i &cur_seed, int count, float *out) {
     int set_count = ceil(count / 4.);
     int start_index;
     int i;
     for(i = 0; i < set_count; i++) {
         start_index = i * 4;
-        rand_sse(&out[start_index]);
+        frand_sse(cur_seed, &out[start_index]);
     }
 }
 
 
-inline void rand_sse_array_cilk(int count, unsigned int *out) {
+inline void rand_sse_array(__m128i &cur_seed, int count, uint32_t *out) {
+    int set_count = ceil(count / 4.);
+    int start_index;
+    int i;
+    for(i = 0; i < set_count; i++) {
+        start_index = i * 4;
+        rand_sse(cur_seed, &out[start_index]);
+    }
+}
+
+
+inline void rand_sse_array_cilk(__m128i &cur_seed, int count, uint32_t *out) {
     int set_count = ceil(count / 4.);
     int start_index;
 #ifdef __cplusplus
@@ -112,17 +129,18 @@ inline void rand_sse_array_cilk(int count, unsigned int *out) {
     cilk_for(i = 0; i < set_count; i++) {
 #endif
         start_index = i * 4;
-        rand_sse(&out[start_index]);
+        rand_sse(cur_seed, &out[start_index]);
     }
 }
 
 
-inline void rand_array(int count, unsigned int *out) {
+inline void rand_array(int count, uint32_t *out) {
     int i;
 
     for(i = 0; i < count; i++) {
         out[i] = rand();
     }
 }
+
 
 #endif
