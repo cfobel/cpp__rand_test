@@ -14,24 +14,26 @@ int main(int argc, char* argv[argc]) {
     timeval begin;
     timeval end;
 
-    double runtimes[3][10];
+    const int LOOP_COUNT = 10;
+    double runtimes[3][LOOP_COUNT];
 
     int i, k;
     for(i = 0; i < 3; i++) {
-        for(k = 0; k < 10; k++) {
+        for(k = 0; k < LOOP_COUNT; k++) {
             gettimeofday(&begin, NULL);
             rand_array(N, results);
             gettimeofday(&end, NULL);
             runtimes[i][k] = (end.tv_sec - begin.tv_sec) * 1000.0;      // sec to ms
             runtimes[i][k] += (end.tv_usec - begin.tv_usec) / 1000.0;   // us to ms
         }
-        __sec_reduce_add(runtimes[i][:]) / 10.;
+        __sec_reduce_add(runtimes[i][:]) / float(LOOP_COUNT);
     }
     double rand_time_spent = __sec_reduce_min(runtimes[:][0]) / 1000.;
-    printf("rand runtime:         %.9fs\n", rand_time_spent);
+    printf("rand runtime:         %.9fs (%.3fns/item)\n", rand_time_spent,
+            rand_time_spent / float(N) / 1e-9);
 
     UniformRandomGenerator my_rng;
-    for(i = 0; i < 3; i++) { for(k = 0; k < 10; k++) {
+    for(i = 0; i < 3; i++) { for(k = 0; k < LOOP_COUNT; k++) {
             gettimeofday(&begin, NULL);
             for(int n = 0; n < N; n++) {
                 results[n] = my_rng.irand(1 << 31);
@@ -40,13 +42,14 @@ int main(int argc, char* argv[argc]) {
             runtimes[i][k] = (end.tv_sec - begin.tv_sec) * 1000.0;      // sec to ms
             runtimes[i][k] += (end.tv_usec - begin.tv_usec) / 1000.0;   // us to ms
         }
-        __sec_reduce_add(runtimes[i][:]) / 10.;
+        __sec_reduce_add(runtimes[i][:]) / float(LOOP_COUNT);
     }
     double uniform_rand_time_spent = __sec_reduce_min(runtimes[:][0]) / 1000.;
     double result = __sec_reduce_add(float(results[0:N]));
-    printf("uniform rand runtime: %.9fs\n", uniform_rand_time_spent);
+    printf("uniform rand runtime: %.9fs (%.3fns/item)\n", uniform_rand_time_spent,
+            uniform_rand_time_spent / float(N) / 1e-9);
 
-    for(i = 0; i < 3; i++) { for(k = 0; k < 10; k++) {
+    for(i = 0; i < 3; i++) { for(k = 0; k < LOOP_COUNT; k++) {
             gettimeofday(&begin, NULL);
             if(N > 10000) rand_sse_array_cilk(N, results);
             else rand_sse_array(N, results);
@@ -54,10 +57,11 @@ int main(int argc, char* argv[argc]) {
             runtimes[i][k] = (end.tv_sec - begin.tv_sec) * 1000.0;      // sec to ms
             runtimes[i][k] += (end.tv_usec - begin.tv_usec) / 1000.0;   // us to ms
         }
-        __sec_reduce_add(runtimes[i][:]) / 10.;
+        __sec_reduce_add(runtimes[i][:]) / float(LOOP_COUNT);
     }
     double sse_rand_time_spent = __sec_reduce_min(runtimes[:][0]) / 1000.;
-    printf("sse rand runtime:     %.9fs\n", sse_rand_time_spent);
+    printf("sse rand runtime:     %.9fs (%.3fns/item)\n", sse_rand_time_spent,
+            sse_rand_time_spent / float(N) / 1e-9);
     printf("sse speedup over rand: %.2fx\n", (rand_time_spent /
                                               sse_rand_time_spent));
     printf("sse speedup over uniform: %.2fx\n", (uniform_rand_time_spent /
