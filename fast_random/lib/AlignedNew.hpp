@@ -1,3 +1,5 @@
+#ifndef ___ALIGNED_NEW__HPP___
+#define ___ALIGNED_NEW__HPP___
 /* Usage:
  *
  *     struct MyData {
@@ -17,6 +19,7 @@
  *     assert(IsAligned(data, 256));
  *     delete data4;
  */
+#include <stdint.h>
 #include <cstdlib>
 #include <cassert>
 
@@ -68,3 +71,4 @@ inline bool IsAligned(void* data, int alignment) {
     { \
         aligned_free(p); \
     }
+#endif

@@ -8,7 +8,9 @@ sys.path += include_dirs
 
 cython_config = dict(include_dirs=include_dirs, language='c++',
                      libraries=['rt'], extra_compile_args=['-O3', '-std=c++0x',
-                                                           '-Wfatal-errors'])
+                                                           '-msse2',
+                                                           '-Wfatal-errors',
+                                                           '-DNO_CILK'])
 
 cython_exts = [Extension('fast_random.%s' % v,
                            ['fast_random/%s.pyx' % v],

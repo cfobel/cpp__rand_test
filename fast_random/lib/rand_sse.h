@@ -33,7 +33,12 @@
 #include <math.h>
 #include <stdlib.h>
 #include <cstdint>
+#ifndef NO_CILK
 #include <cilk/cilk.h>
+#define ALIGN(X)     __declspec( align(X) )
+#else
+#define ALIGN(X)     __attribute__ ((aligned(8 * X)))
+#endif
 
 
 //define this if you wish to return values similar to the standard rand();
@@ -49,26 +54,29 @@ inline void frand_sse(__m128i &cur_seed, float* result) {
     const float max_value = 4294967295.;
     uint32_t rand_uints[4];
     rand_sse(cur_seed, rand_uints);
-    result[0:4] = float(rand_uints[:]) / max_value;
+#pragma simd
+    for (int i = 0; i < 4; i++) {
+        result[i] = float(rand_uints[i]) / max_value;
+    }
 }
 
 inline void rand_sse(__m128i &cur_seed, uint32_t* result) {
-    __declspec( align(16) ) __m128i cur_seed_split;
-    __declspec( align(16) ) __m128i multiplier;
-    __declspec( align(16) ) __m128i adder;
-    __declspec( align(16) ) __m128i mod_mask;
-    __declspec( align(16) ) __m128i sra_mask;
-    __declspec( align(16) ) __m128i sseresult;
-    __declspec( align(16) ) static const uint32_t mult[4] =
+     __m128i cur_seed_split;
+    ALIGN(16) __m128i multiplier;
+    ALIGN(16) __m128i adder;
+    ALIGN(16) __m128i mod_mask;
+    ALIGN(16) __m128i sra_mask;
+    ALIGN(16) __m128i sseresult;
+    ALIGN(16) static const uint32_t mult[4] =
     { 214013, 17405, 214013, 69069 };
 
-    __declspec( align(16) ) static const uint32_t gadd[4] =
+    ALIGN(16) static const uint32_t gadd[4] =
     { 2531011, 10395331, 13737667, 1 };
 
-    __declspec( align(16) ) static const uint32_t mask[4] =
+    ALIGN(16) static const uint32_t mask[4] =
     { 0xFFFFFFFF, 0, 0xFFFFFFFF, 0 };
 
-    __declspec( align(16) ) static const uint32_t masklo[4] =
+    ALIGN(16) static const uint32_t masklo[4] =
     { 0x00007FFF, 0x00007FFF, 0x00007FFF, 0x00007FFF };
 
     adder = _mm_load_si128( (__m128i*) gadd);
@@ -119,6 +127,7 @@ inline void rand_sse_array(__m128i &cur_seed, int count, uint32_t *out) {
 }
 
 
+#ifndef NO_CILK
 inline void rand_sse_array_cilk(__m128i &cur_seed, int count, uint32_t *out) {
     int set_count = ceil(count / 4.);
     int start_index;
@@ -132,6 +141,7 @@ inline void rand_sse_array_cilk(__m128i &cur_seed, int count, uint32_t *out) {
         rand_sse(cur_seed, &out[start_index]);
     }
 }
+#endif
 
 
 inline void rand_array(int count, uint32_t *out) {

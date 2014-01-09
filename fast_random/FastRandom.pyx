@@ -48,5 +48,5 @@ cdef class cFastRandom:
     def rand_array(self, uint32_t [:] out):
         self.thisptr.rand_array(len(out), &out[0])
 
-    def cilk_rand_array(self, uint32_t [:] out):
-        self.thisptr.cilk_rand_array(len(out), &out[0])
+    #def cilk_rand_array(self, uint32_t [:] out):
+        #self.thisptr.cilk_rand_array(len(out), &out[0])

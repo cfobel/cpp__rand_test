@@ -1,6 +1,11 @@
 #include <stdexcept>
 #include "AlignedNew.hpp"
 #include "rand_sse.h"
+#ifndef NO_CILK
+#define ALIGN(X)     __declspec( align(X) )
+#else
+#define ALIGN(X)     __attribute__ ((aligned(8 * X)))
+#endif
 
 
 class FastRandom {
@@ -18,7 +23,7 @@ class FastRandom {
      * [1]: http://software.intel.com/en-us/articles/fast-random-number-generator-on-the-intel-pentiumr-4-processor/
      */
 public:
-    __declspec(align(16)) __m128i cur_seed_;
+    ALIGN(16) __m128i cur_seed_;
 
     static FastRandom *create_aligned(uint32_t seed=1) {
         //char *buffer = (char *)_mm_malloc(sizeof(FastRandom), 16);
@@ -61,7 +66,8 @@ public:
         rand_sse(this->cur_seed_, out);
     }
 
-    void frand_array(int count, float out[count]) {
+    //void frand_array(int count, float out[count]) {
+    void frand_array(int count, float *out) {
         /* Fill `out` with random floating-point numbers in the inclusive
          * range, `[0..1]`.
          *
@@ -69,7 +75,8 @@ public:
         frand_sse_array(this->cur_seed_, count, out);
     }
 
-    void rand_array(int count, uint32_t out[count]) {
+    //void rand_array(int count, uint32_t out[count]) {
+    void rand_array(int count, uint32_t *out) {
         /* Fill `out` with random unsigned integers in the inclusive range,
          * `[0..2^32 - 1]` _(i.e., `[0..4294967295]`)_.
          *
@@ -77,6 +84,7 @@ public:
         rand_sse_array(this->cur_seed_, count, out);
     }
 
+#ifndef NO_CILK
     void cilk_rand_array(int count, uint32_t out[count]) {
         /* __NB__ __TODO__ This method likely produces undefined behaviour,
          * since the `cur_seed_` variable is modified by more than one thread
@@ -89,6 +97,7 @@ public:
          * __NB__ The length of the `out` array must be divisible by 4! */
         rand_sse_array_cilk(this->cur_seed_, count, out);
     }
+#endif
 
     DYNAMIC_ALIGNMENT(FastRandom);
 };

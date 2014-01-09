@@ -19,7 +19,7 @@ cdef extern from "lib/FastRandom.hpp":
         void rand4(uint32_t *out) nogil
         void rand_array(int count, uint32_t *out) nogil
         void frand_array(int count, float *out) nogil
-        void cilk_rand_array(int count, uint32_t *out) nogil
+        #void cilk_rand_array(int count, uint32_t *out) nogil
 
     void c_rand_array "rand_array" (int count, unsigned int*) nogil
 
